@@ -1,3 +1,5 @@
 # created by virtualenv automatically
 *.env
-*stream.log
+.log
+
+venv/
