@@ -1,0 +1,30 @@
+version: 1
+disable_existing_loggers: true
+
+formatters:
+  simple:
+    format: "%(asctime)s - %(levelname)s - %(message)s"
+
+handlers:
+  console:
+    level: DEBUG
+    class: logging.StreamHandler
+    formatter: simple
+    stream: ext://sys.stdout
+  file_handler:
+    level: DEBUG
+    class: logging.FileHandler
+    formatter: simple
+    filename: stream.log
+    mode: a
+    encoding: utf8
+
+loggers:
+  spotify_stream:
+    level: DEBUG
+    handlers: [console, file_handler]
+    propagate: no
+root:
+  level: DEBUG
+  handlers: [console,file_handler]
+
