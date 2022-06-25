@@ -19,8 +19,17 @@ handlers:
     mode: a
     encoding: utf8
 
+
 loggers:
   spotify_stream:
+    level: DEBUG
+    handlers: [console, file_handler]
+    propagate: no
+  access_token:
+    level: DEBUG
+    handlers: [console, file_handler]
+    propagate: no
+  connector:
     level: DEBUG
     handlers: [console, file_handler]
     propagate: no

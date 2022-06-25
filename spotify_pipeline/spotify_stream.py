@@ -1,66 +1,36 @@
 import logging
 from logging import config
+
+import requests
 import yaml
-from utils.connector import db_connector
 import os
 from dotenv import load_dotenv
-import requests
-from utils.encode_b64 import Credentials
 from datetime import datetime as dt
 from datetime import timedelta
+from utils.authorisation import AuthoriseUser, GetAccessToken, Credentials, redirect_uri
+from utils.connector import DatabaseConnection
 
 
 load_dotenv()
 
 
-class DatabaseConnection:
-    """
-    Used as a context manager for a database connection. __enter__ and __exit__ are magic methods that 'set-up'
-    and 'tear down' the the database connection.
-    """
-
-    def __init__(self, db_name: str):
-        self._conn = db_connector(db_name)
-
-    def __enter__(self):
-        logging.info('Calling the db connection enter method...')
-        return self._conn.cursor()
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        logging.info('Calling the db connection exit method...')
-        self._conn.commit()
-        self._conn.close()
-
-class GetAccessToken:
-    def __init__(self):
-        self.access_token = ''
-        self.expiry_time = ''
-        self.token_time = ''
-
-    def get_access_token(self):
-        logger.info('posting credentials to get access token...')
-        auth_response = requests.post(auth_url, data=post_data, headers=post_headers)
-        logger.info('post method successful...')
-        self.token_time = dt.now()
-        response_data = auth_response.json()
-        print(response_data)
-        self.access_token = response_data['access_token']
-        self.expiry_time = response_data['expires_in']
-        logging.info('access token saved...')
-        return self.access_token
-
-    def is_valid(self):
-        current_time = dt.now()
-        expires = self.token_time + dt.timedelta(seconds=self.expiry_time)
-        expired = expires < current_time
-        return expired
-
 class GetTracks:
-    def __init__(self, access_token, endpoint):
+    def __init__(self, access_token, endpoint, headers):
         self.access_token = access_token
         self.endpoint = endpoint
+        self.headers = headers
+
 
     def get_tracks(self):
+        try:
+            response = requests.get(self.endpoint, self.headers)
+        except Exception:
+            logging.exception('unable to get tracks')
+        else:
+            print(self.headers)
+            tracks_played_data = response.json()
+            print(tracks_played_data)
+            return tracks_played_data
 
 
 if __name__ =='__main__':
@@ -71,32 +41,36 @@ if __name__ =='__main__':
     logger = logging.getLogger(__name__)
     logger.info('testing logger')
 
-    my_creds = Credentials()
-    encoded_creds = my_creds.encode_credentials_b64()
-    auth_url = os.getenv('AUTH_URL')
-    post_data = {'grant_type': 'client_credentials'}
-    post_headers = {'Authorization': f'Basic {encoded_creds.decode()}'}
+    creds = Credentials()
+    encoded_creds = creds.encode_credentials_b64()
 
-    generate_token = GetAccessToken()
-    token = generate_token.get_access_token()
+    auth_user = AuthoriseUser()
+    auth_user_data = auth_user.authorise()
 
-    get_headers = {
-        'Accept':'application/json',
-        'Content-Type':'application/json',
-        'Authorization':f'Bearer {token}'
+    post_data = {
+        'grant_type':'authorization_code',
+        'code':f'{auth_user_data}',
+        'redirect_uri':f'{redirect_uri}'
     }
 
-    today = dt.now()
-    yesterday = today-dt.timedelta(days=1)
-    unix_yesterday = int((yesterday.timestamp())*1000)
+    post_headers = {
+        'Authorization':f'Basic {encoded_creds}'
+    }
+
+    auth_url = os.getenv('AUTH_URL')
+    set_up_token = GetAccessToken()
+    access_token = set_up_token.get_access_token(auth_url, post_data, post_headers)
 
 
 
+    # get_headers = {
+    #     'Accept':'application/json',
+    #     'Content-Type':'application/json',
+    #     'Authorization':f'Bearer {token}'
+    # }
+    #
+    # today = dt.now()
+    # yesterday = today-timedelta(days=1)
+    # unix_yesterday = int((yesterday.timestamp())*1000)
 
-
-
-
-
-
-    
 
