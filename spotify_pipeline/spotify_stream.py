@@ -7,8 +7,9 @@ import os
 from dotenv import load_dotenv
 from datetime import datetime as dt
 from datetime import timedelta
-from utils.authorisation import AuthoriseUser, GetAccessToken, Credentials, redirect_uri
-from utils.connector import DatabaseConnection
+from utils.authorisation import AuthoriseUser
+from selenium import webdriver
+import time
 
 
 load_dotenv()
@@ -41,34 +42,29 @@ if __name__ =='__main__':
     logger = logging.getLogger(__name__)
     logger.info('testing logger')
 
-    creds = Credentials()
-    encoded_creds = creds.encode_credentials_b64()
-
     auth_user = AuthoriseUser()
     auth_user_data = auth_user.authorise()
+    print(auth_user_data)
 
-    post_data = {
-        'grant_type':'authorization_code',
-        'code':f'{auth_user_data}',
-        'redirect_uri':f'{redirect_uri}'
-    }
-
-    post_headers = {
-        'Authorization':f'Basic {encoded_creds}'
-    }
-
-    auth_url = os.getenv('AUTH_URL')
-    set_up_token = GetAccessToken()
-    access_token = set_up_token.get_access_token(auth_url, post_data, post_headers)
-
-
-
-    # get_headers = {
-    #     'Accept':'application/json',
-    #     'Content-Type':'application/json',
-    #     'Authorization':f'Bearer {token}'
+    # encoded_creds = os.getenv('CLIENT_CRED_ENCODED')
+    #
+    #
+    # post_data = {
+    #     'grant_type':'authorization_code',
+    #     'code':f'{auth_user_data}',
+    #     'redirect_uri':f'{redirect_uri}'
     # }
     #
+    # print(encoded_creds)
+    # post_headers = {
+    #     'Authorization':f'Basic {encoded_creds}'
+    # }
+    #
+    # auth_url = os.getenv('AUTH_URL')
+    # set_up_token = GetAccessToken()
+    # access_token = set_up_token.get_access_token(auth_url, post_data, post_headers)
+
+
     # today = dt.now()
     # yesterday = today-timedelta(days=1)
     # unix_yesterday = int((yesterday.timestamp())*1000)
