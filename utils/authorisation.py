@@ -44,4 +44,4 @@ class GetAccessToken:
             print('\nRefresh Token: ', self.refresh_token + '\n')
             logging.info('access token and refresh token saved')
             print("\nSave the access and refresh token!")
-            return auth_response.json()
+            return self.access_token
