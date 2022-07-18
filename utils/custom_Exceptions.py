@@ -17,6 +17,9 @@ class LogInNotRequired(Error):
     pass
 
 
+class DataHasNullValues(Error):
+    pass
+
 
 
 

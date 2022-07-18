@@ -9,7 +9,11 @@ import webbrowser
 import urllib.parse
 import requests
 from utils.time_stamp import TimeStamp
-
+from utils.transfrorm import TransformTracksData
+from utils.connector import DatabaseConnection
+import pandas
+from utils.custom_Exceptions import  DataHasNullValues
+from datetime import datetime, timedelta
 
 load_dotenv()
 
@@ -39,25 +43,22 @@ class GetData:
         response = requests.get(self.endpoint, self.headers, self.data)
         return response.json()
 
-class SaveData:
-    def __init__(self):
-        self.tracks_dictionary = {}
-        self.song_names = []
-        self.artists = []
-        self.track_played_at = []
+class ValidateData:
+    def __init__(self, df):
+        self.df = df
 
-    def tracks_from_json(self, json_data):
-        tracks = json_data["items"]
-        for track in tracks:
-            self.song_names.append(track["track"]["name"])
-            self.artists.append(track["track"]["album"]["artists"][0]["name"])
-            self.track_played_at.append(track["played_at"])
-            self.tracks_dictionary = {
-                'track_name':  self.song_names,
-                'artist_name': self.artists,
-                'played_at': self.track_played_at
-            }
-        return self.tracks_dictionary
+    def is_null_vals(self):
+        null_values = self.df.isnull().values.any()
+        if null_values == True:
+            logging.info('Data contains null values')
+            raise DataHasNullValues
+        return null_values
+
+    def check_timestamps(self):
+        yesterday = datetime.now().date() - timedelta(days=1)
+        time_stamps_list = self.df['time_stamp'].values.tolist()
+        for stamp in time_stamps_list:
+
 
 
 
@@ -108,6 +109,20 @@ if __name__ =='__main__':
     tstamp_url = get_tracks_data.unix_timestamp_endpoint(t_stamp)
     get_tracks_data.endpoint = tstamp_url
     my_tracks_data = get_tracks_data.get_data()
+
+    tracks_transform = TransformTracksData()
+    tracks_transform.tracks_from_json()
+    data_df = tracks_transform.tracks_dict_to_df()
+
+    db = os.getenv('DB_NAME')
+    with DatabaseConnection(db) as db_conn:
+        query = '''CREATE TABLE IF NOT EXISTS Songs (
+	id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    song_name VARCHAR(55) NOT NULL,
+    artist_name VARCHAR(55) NOT NULL,
+    time_stamp VARCHAR (55) PRIMARY KEY NOT NULL
+    )'''
+        db_conn.execute(query)
 
 
 

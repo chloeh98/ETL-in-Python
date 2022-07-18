@@ -6,7 +6,7 @@ import logging
 load_dotenv()
 
 
-def db_connector(db_name):
+def db_connector(db_name: str):
         return psycopg2.connect(
             host=os.getenv('DB_HOST'),
             database=db_name,
@@ -30,5 +30,8 @@ class DatabaseConnection:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         logging.info('Calling the db connection exit method...')
-        self._conn.commit()
+        if exc_tb is None:
+            self._conn.commit()
+        else:
+            self._conn.rollback()
         self._conn.close()
