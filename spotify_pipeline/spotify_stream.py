@@ -11,8 +11,7 @@ import requests
 from utils.time_stamp import TimeStamp
 from utils.transfrorm import TransformTracksData
 from utils.connector import DatabaseConnection
-import pandas
-from utils.custom_Exceptions import  DataHasNullValues
+from utils.custom_Exceptions import DataHasNullValues, SongNotPlayedYesterday
 from datetime import datetime, timedelta
 
 load_dotenv()
@@ -43,21 +42,32 @@ class GetData:
         response = requests.get(self.endpoint, self.headers, self.data)
         return response.json()
 
+
 class ValidateData:
     def __init__(self, df):
         self.df = df
 
+    def df_empty(self):
+        if self.df.empty:
+            logging.info('No data to load to database')
+            return True
+
     def is_null_vals(self):
         null_values = self.df.isnull().values.any()
-        if null_values == True:
+        if null_values:
             logging.info('Data contains null values')
             raise DataHasNullValues
         return null_values
 
     def check_timestamps(self):
-        yesterday = datetime.now().date() - timedelta(days=1)
+        yesterday_date_stamp = datetime.now().date() - timedelta(days=1)
         time_stamps_list = self.df['time_stamp'].values.tolist()
-        for stamp in time_stamps_list:
+        for song_tstamps in time_stamps_list:
+            song_date_stamp = datetime.strptime(song_tstamps, '%Y/%m/%d')
+            if song_date_stamp != yesterday_date_stamp:
+                logging.info('At least one song was not played yesterday')
+                raise SongNotPlayedYesterday
+        return True
 
 
 
@@ -74,10 +84,10 @@ if __name__ =='__main__':
     encoded_creds = my_authorisation.client_creds_encoded
     print(encoded_creds)
     endpoint = my_authorisation.get_auth_endpoint()
-    print('copy the url you are redirected to.')
+    print('Copy the url you are redirected to.')
     webbrowser.open(endpoint)
 
-    resp = input('redirected url: ')
+    resp = input('Redirected url: ')
     authorisation_code = urllib.parse.parse_qs(urllib.parse.urlparse(resp).query)['code'][0]
     time.sleep(2)
 

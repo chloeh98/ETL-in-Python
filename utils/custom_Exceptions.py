@@ -20,6 +20,9 @@ class LogInNotRequired(Error):
 class DataHasNullValues(Error):
     pass
 
+class SongNotPlayedYesterday:
+    pass
+
 
 
 
