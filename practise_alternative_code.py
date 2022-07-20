@@ -4,7 +4,7 @@ This file is to showcase code written as experimentation to demonstrate how to p
 import os
 from contextlib import contextmanager
 import logging
-from utils.connector import db_connector
+from database import db_connector
 import psycopg2
 import requests
 from selenium import webdriver
@@ -12,7 +12,7 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
 from urllib.parse import urlparse, parse_qs
-from utils.custom_Exceptions import AccessTokenNotAuthorised, CannotAuthoriseUser
+from utils.custom_exceptions import AccessTokenNotAuthorised
 import time
 @contextmanager
 def database_context_manager(db_name):

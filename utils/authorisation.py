@@ -1,7 +1,7 @@
 import os
 import logging
 import requests
-from utils.custom_Exceptions import ResponseError
+from utils.custom_exceptions import ResponseError
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -44,4 +44,5 @@ class GetAccessToken:
             print('\nRefresh Token: ', self.refresh_token + '\n')
             logging.info('access token and refresh token saved')
             print("\nSave the access and refresh token!")
+            print(response_data['scope'])
             return self.access_token

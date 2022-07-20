@@ -23,3 +23,4 @@ class TransformTracksData:
     def tracks_dict_to_df(self):
         tracks_df = pd.DataFrame.from_dict(self.tracks_dictionary)
         return tracks_df
+
