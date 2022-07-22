@@ -157,3 +157,17 @@ class AuthoriseToken:
         bytes_client_creds = self.client_creds.encode('ascii')
         self.client_creds_encoded = base64.urlsafe_b64encode(bytes_client_creds)
         return self.client_creds
+
+
+"""
+This method checks the time stamps from the rows to see if they are within the past day
+"""
+# def check_timestamps(self):
+    #     yesterday_date_stamp = datetime.now().date() - timedelta(days=1)
+    #     time_stamps_list = self.df['time_stamp'].values.tolist()
+    #     for song_tstamps in time_stamps_list:
+    #         song_date_stamp = datetime.strptime(song_tstamps, '%Y/%m/%d')
+    #         if song_date_stamp != yesterday_date_stamp:
+    #             logging.info('At least one song was not played yesterday')
+    #             raise SongNotPlayedYesterday
+    #     return True

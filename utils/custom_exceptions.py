@@ -13,15 +13,17 @@ class ResponseError(Error):
         self.message = f'Request unsuccessful, status code: {status_code}'
         super().__init__(self.message)
 
-class LogInNotRequired(Error):
-    pass
-
 
 class DataHasNullValues(Error):
     pass
 
-class SongNotPlayedYesterday:
+class NoDataToLoad(Error):
     pass
+
+
+class NoValidDataToLoad(Error):
+    pass
+
 
 
 

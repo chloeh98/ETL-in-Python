@@ -1,9 +1,29 @@
 import os
 from dotenv import load_dotenv
 import sqlalchemy
-from sqlalchemy.orm import sessionmaker
+import logging
+from utils.custom_exceptions import DataHasNullValues, NoDataToLoad
 
 load_dotenv()
+
+class ValidateData:
+    def __init__(self, df):
+        self.df = df
+
+    def df_empty(self):
+        empty_df = self.df.empty
+        if self.df.empty:
+            logging.info('No data to load to database')
+            raise NoDataToLoad
+        return empty_df
+
+    def is_null_vals(self):
+        null_values = self.df.isnull().values.any()
+        if null_values:
+            logging.info('Data contains null values')
+            raise DataHasNullValues
+        return null_values
+
 
 class CreateEngine:
     def __init__(self):
