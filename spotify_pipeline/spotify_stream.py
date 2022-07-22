@@ -4,14 +4,14 @@ import time
 from logging import config
 import yaml
 from dotenv import load_dotenv
-from utils.authorisation import AuthoriseUser, GetAccessToken
-import webbrowser
-import urllib.parse
 import requests
 from utils.time_stamp import TimeStamp
 from utils.transfrorm import TransformTracksData
 from database.connector import DatabaseConnection
 from database.Load import CreateEngine
+from utils.authorisation import AuthoriseUser, GetAccessToken
+import urllib.parse
+import webbrowser
 from utils.custom_exceptions import DataHasNullValues, SongNotPlayedYesterday
 from datetime import datetime, timedelta
 
@@ -23,6 +23,10 @@ class GetData:
         self.endpoint = ''
         self.headers = headers
         self.data = data
+
+class GetRecentlyPlayedTracks(GetData):
+    def __init__(self, headers):
+        super().__init__(headers, data=None)
 
 
     @staticmethod
@@ -40,8 +44,7 @@ class GetData:
         print(self.endpoint)
 
     def get_data(self):
-        response = requests.get(self.endpoint, self.headers)
-        print(response)
+        response = requests.get(self.endpoint, headers=self.headers, data=None)
         return response.json()
 
 
@@ -82,66 +85,63 @@ if __name__ =='__main__':
     logger = logging.getLogger(__name__)
     logger.info('testing logger')
 
-    # my_authorisation = AuthoriseUser()
-    # encoded_creds = my_authorisation.client_creds_encoded
-    # print(encoded_creds)
-    # endpoint = my_authorisation.get_auth_endpoint()
-    # print('Copy the url you are redirected to.')
-    # webbrowser.open(endpoint)
-    #
-    # resp = input('Redirected url: ')
-    # authorisation_code = urllib.parse.parse_qs(urllib.parse.urlparse(resp).query)['code'][0]
-    # time.sleep(2)
-    #
-    # post_headers = {
-    #     "Authorization": f"Basic {encoded_creds}",
-    #     "Content_Type": "application/x-www-form-urlencoded"
-    # }
-    #
-    # redirect_uri = os.getenv("REDIRECT_URI")
-    # post_data = {
-    #     "grant_type": "authorization_code",
-    #     "code": f"{authorisation_code}",
-    #     "redirect_uri": f"{redirect_uri}"
-    # }
-    #
-    # my_access_token = GetAccessToken()
-    # access_token = my_access_token.get_access_token(post_data, post_headers)
-    access_token = "BQD4nQVOWWpm2RGXYWmIaLagtSh-DN18ydjcxA44wfWutgOoOB6L28VZFnDAr_lMjqWgV8KjCIl1xprik-azzCncZSH-UcxpoZQET92FB4NKQUgTL0Rm_bj_XsejMvMqZWM9P15sB110_Gt-kLuyWYzo6LP4No92KyK0upSTUGD-txDdFanv"
+    my_authorisation = AuthoriseUser()
+    encoded_creds = my_authorisation.client_creds_encoded
+    endpoint = my_authorisation.get_auth_endpoint()
+    print('Copy the url you are redirected to.')
+    webbrowser.open(endpoint)
+
+    resp = input('Redirected url: ')
+    authorisation_code = urllib.parse.parse_qs(urllib.parse.urlparse(resp).query)['code'][0]
+    time.sleep(2)
+
+    post_headers = {
+        "Authorization": f"Basic {encoded_creds}",
+        "Content_Type": "application/x-www-form-urlencoded"
+    }
+
+    redirect_uri = os.getenv("REDIRECT_URI")
+    post_data = {
+        "grant_type": "authorization_code",
+        "code": f"{authorisation_code}",
+        "redirect_uri": f"{redirect_uri}"
+    }
+
+
+    my_access_token = GetAccessToken()
+    access_token = my_access_token.get_access_token(post_data, post_headers)
     timestamp = TimeStamp()
     t_stamp = timestamp.unix_timestamp()
 
     get_headers = {
         "Accept": "application/json",
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {access_token}"
+        "Authorization": "Bearer {access_token}".format(access_token=access_token)
     }
 
-    get_tracks_data = GetData(get_headers, data=None)
+    get_tracks_data = GetRecentlyPlayedTracks(get_headers)
     tstamp_url = get_tracks_data.unix_timestamp_endpoint(t_stamp)
     get_tracks_data.endpoint = tstamp_url
     my_tracks_data = get_tracks_data.get_data()
-    print(get_tracks_data.headers)
-    print(my_tracks_data)
 
-    # tracks_transform = TransformTracksData()
-    # tracks_transform.tracks_from_json(my_tracks_data)
-    # data_df = tracks_transform.tracks_dict_to_df()
+    tracks_transform = TransformTracksData()
+    tracks_transform.tracks_from_json(my_tracks_data)
+    data_df = tracks_transform.tracks_dict_to_df()
 
-    # db = os.getenv('DB_NAME')
-    # create_engine = CreateEngine()
-    # engine = create_engine.engine_connection()
-    # with DatabaseConnection(db) as db_conn:
-    #     query = '''CREATE TABLE IF NOT EXISTS Songs (
-	# id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    # song_name VARCHAR(55) NOT NULL,
-    # artist_name VARCHAR(55) NOT NULL,
-    # time_stamp VARCHAR (55) PRIMARY KEY NOT NULL
-    # )'''
-    #     db_conn.execute(query)
-    #
-    # with DatabaseConnection(db) as db_conn:
-    #     data_df.to_sql('music', engine, index=False, if_exists='append')
+    db = os.getenv('DB_NAME')
+    create_engine = CreateEngine()
+    engine = create_engine.engine_connection()
+    with DatabaseConnection(db) as db_conn:
+        query = '''CREATE TABLE IF NOT EXISTS Songs (
+	id SERIAL,
+    song_name VARCHAR(55) NOT NULL,
+    artist_name VARCHAR(55) NOT NULL,
+    time_stamp VARCHAR (55) PRIMARY KEY NOT NULL
+    )'''
+        db_conn.execute(query)
+
+    with DatabaseConnection(db) as db_conn:
+        data_df.to_sql('music', engine, index=False, if_exists='append')
 
 
 

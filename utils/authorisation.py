@@ -38,11 +38,11 @@ class GetAccessToken:
         else:
             logging.info('post method successful')
             response_data = auth_response.json()
+            print("\nSave the access and refresh token!")
             self.access_token = response_data['access_token']
             print('\nAccess Token: ', self.access_token + '\n')
             self.refresh_token = response_data['refresh_token']
             print('\nRefresh Token: ', self.refresh_token + '\n')
             logging.info('access token and refresh token saved')
-            print("\nSave the access and refresh token!")
-            print(response_data['scope'])
+            print('Token scopes: ', response_data['scope'])
             return self.access_token

@@ -32,6 +32,8 @@ class DatabaseConnection:
         logging.info('Calling the db connection exit method...')
         if exc_tb is None:
             self._conn.commit()
+            logging.info('database committing')
         else:
+            logging.info('error: could not not commit, rolling back')
             self._conn.rollback()
         self._conn.close()
