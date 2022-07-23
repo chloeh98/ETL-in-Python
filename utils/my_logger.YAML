@@ -33,10 +33,6 @@ loggers:
     level: DEBUG
     handlers: [console, file_handler]
     propagate: no
-  Load:
-    level: DEBUG
-    handlers: [console, file_handler]
-    propagate: [no]
 root:
   level: DEBUG
   handlers: [console,file_handler]

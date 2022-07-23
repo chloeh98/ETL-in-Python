@@ -12,7 +12,8 @@ from database.Load import CreateEngine
 from utils.authorisation import AuthoriseUser, GetAccessToken
 import urllib.parse
 import webbrowser
-from utils.custom_exceptions import DataHasNullValues, NoValidDataToLoad
+from utils.custom_exceptions import DataHasNullValues, SongNotPlayedYesterday
+from datetime import datetime, timedelta
 
 load_dotenv()
 
@@ -45,6 +46,33 @@ class GetRecentlyPlayedTracks(GetData):
     def get_data(self):
         response = requests.get(self.endpoint, headers=self.headers, data=None)
         return response.json()
+
+
+class ValidateData:
+    def __init__(self, df):
+        self.df = df
+
+    def df_empty(self):
+        if self.df.empty:
+            logging.info('No data to load to database')
+            return True
+
+    def is_null_vals(self):
+        null_values = self.df.isnull().values.any()
+        if null_values:
+            logging.info('Data contains null values')
+            raise DataHasNullValues
+        return null_values
+
+    def check_timestamps(self):
+        yesterday_date_stamp = datetime.now().date() - timedelta(days=1)
+        time_stamps_list = self.df['time_stamp'].values.tolist()
+        for song_tstamps in time_stamps_list:
+            song_date_stamp = datetime.strptime(song_tstamps, '%Y/%m/%d')
+            if song_date_stamp != yesterday_date_stamp:
+                logging.info('At least one song was not played yesterday')
+                raise SongNotPlayedYesterday
+        return True
 
 
 
@@ -100,10 +128,10 @@ if __name__ =='__main__':
     tracks_transform.tracks_from_json(my_tracks_data)
     data_df = tracks_transform.tracks_dict_to_df()
 
-    validating = ValidateData(data_df)
-    songs_played = validating.df_empty()
-    null_values = validating.is_null_vals()
-    if songs_played is False and null_values is False:
+    validate = ValidateData(data_df)
+    a = validate.df_empty()
+    b = validate.is_null_vals()
+    if a is False or b is False:
         db = os.getenv('DB_NAME')
         create_engine = CreateEngine()
         engine = create_engine.engine_connection()
@@ -116,11 +144,9 @@ if __name__ =='__main__':
         )'''
             db_conn.execute(query)
 
-        # method='multi' tells pandas to pass multiple rows into a single insert query
         with DatabaseConnection(db) as db_conn:
-            data_df.to_sql('music', engine, method='multi', index=False, if_exists='append')
-    else:
-        raise NoValidDataToLoad
+            data_df.to_sql('music', engine, index=False, if_exists='append')
+    print('execution finished')
 
 
 
