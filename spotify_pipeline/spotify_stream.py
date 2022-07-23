@@ -128,20 +128,25 @@ if __name__ =='__main__':
     tracks_transform.tracks_from_json(my_tracks_data)
     data_df = tracks_transform.tracks_dict_to_df()
 
-    db = os.getenv('DB_NAME')
-    create_engine = CreateEngine()
-    engine = create_engine.engine_connection()
-    with DatabaseConnection(db) as db_conn:
-        query = '''CREATE TABLE IF NOT EXISTS Songs (
-	id SERIAL,
-    song_name VARCHAR(55) NOT NULL,
-    artist_name VARCHAR(55) NOT NULL,
-    time_stamp VARCHAR (55) PRIMARY KEY NOT NULL
-    )'''
-        db_conn.execute(query)
+    validate = ValidateData(data_df)
+    a = validate.df_empty()
+    b = validate.is_null_vals()
+    if a is False or b is False:
+        db = os.getenv('DB_NAME')
+        create_engine = CreateEngine()
+        engine = create_engine.engine_connection()
+        with DatabaseConnection(db) as db_conn:
+            query = '''CREATE TABLE IF NOT EXISTS Songs (
+        id SERIAL,
+        song_name VARCHAR(55) NOT NULL,
+        artist_name VARCHAR(55) NOT NULL,
+        time_stamp VARCHAR (55) PRIMARY KEY NOT NULL
+        )'''
+            db_conn.execute(query)
 
-    with DatabaseConnection(db) as db_conn:
-        data_df.to_sql('music', engine, index=False, if_exists='append')
+        with DatabaseConnection(db) as db_conn:
+            data_df.to_sql('music', engine, index=False, if_exists='append')
+    print('execution finished')
 
 
 
