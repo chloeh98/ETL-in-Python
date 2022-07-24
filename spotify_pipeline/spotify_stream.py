@@ -102,7 +102,7 @@ if __name__ =='__main__':
     engine = create_engine.engine_connection()
     db = os.getenv("DB_NAME")
     with DatabaseConnection(db) as db_conn:
-        query = '''DROP TABLE IF EXISTS songs;
+        query = '''
         CREATE TABLE IF NOT EXISTS songs (
                 id SERIAL PRIMARY KEY,
                 track_name VARCHAR(55) NOT NULL,
