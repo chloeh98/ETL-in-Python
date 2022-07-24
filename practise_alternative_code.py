@@ -4,7 +4,7 @@ This file is to showcase code written as experimentation to demonstrate how to p
 import os
 from contextlib import contextmanager
 import logging
-from database import db_connector
+from database.connector import db_connector
 import psycopg2
 import requests
 from selenium import webdriver
@@ -157,3 +157,15 @@ class AuthoriseToken:
         bytes_client_creds = self.client_creds.encode('ascii')
         self.client_creds_encoded = base64.urlsafe_b64encode(bytes_client_creds)
         return self.client_creds
+
+
+
+    def check_timestamps(self):
+        yesterday_date_stamp = datetime.now().date() - timedelta(days=1)
+        time_stamps_list = self.df['time_stamp'].values.tolist()
+        for song_tstamps in time_stamps_list:
+            song_date_stamp = datetime.strptime(song_tstamps, '%Y/%m/%d')
+            if song_date_stamp != yesterday_date_stamp:
+                logging.info('At least one song was not played yesterday')
+                raise SongNotPlayedYesterday
+        return True

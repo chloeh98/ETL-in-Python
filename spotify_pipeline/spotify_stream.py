@@ -8,12 +8,10 @@ import requests
 from utils.time_stamp import TimeStamp
 from utils.transfrorm import TransformTracksData
 from database.connector import DatabaseConnection
-from database.Load import CreateEngine
+from database.Load import CreateEngine, ValidateData
 from utils.authorisation import AuthoriseUser, GetAccessToken
-import urllib.parse
-import webbrowser
-from utils.custom_exceptions import DataHasNullValues, SongNotPlayedYesterday
-from datetime import datetime, timedelta
+from selenium.common.exceptions import NoSuchElementException
+
 
 load_dotenv()
 
@@ -48,35 +46,6 @@ class GetRecentlyPlayedTracks(GetData):
         return response.json()
 
 
-class ValidateData:
-    def __init__(self, df):
-        self.df = df
-
-    def df_empty(self):
-        if self.df.empty:
-            logging.info('No data to load to database')
-            return True
-
-    def is_null_vals(self):
-        null_values = self.df.isnull().values.any()
-        if null_values:
-            logging.info('Data contains null values')
-            raise DataHasNullValues
-        return null_values
-
-    def check_timestamps(self):
-        yesterday_date_stamp = datetime.now().date() - timedelta(days=1)
-        time_stamps_list = self.df['time_stamp'].values.tolist()
-        for song_tstamps in time_stamps_list:
-            song_date_stamp = datetime.strptime(song_tstamps, '%Y/%m/%d')
-            if song_date_stamp != yesterday_date_stamp:
-                logging.info('At least one song was not played yesterday')
-                raise SongNotPlayedYesterday
-        return True
-
-
-
-
 if __name__ =='__main__':
     with open('../utils/my_logger.YAML') as file:
         config = yaml.safe_load(file.read())
@@ -87,12 +56,7 @@ if __name__ =='__main__':
 
     my_authorisation = AuthoriseUser()
     encoded_creds = my_authorisation.client_creds_encoded
-    endpoint = my_authorisation.get_auth_endpoint()
-    print('Copy the url you are redirected to.')
-    webbrowser.open(endpoint)
-
-    resp = input('Redirected url: ')
-    authorisation_code = urllib.parse.parse_qs(urllib.parse.urlparse(resp).query)['code'][0]
+    authorisation_code = my_authorisation.get_auth()
     time.sleep(2)
 
     post_headers = {
@@ -126,26 +90,29 @@ if __name__ =='__main__':
 
     tracks_transform = TransformTracksData()
     tracks_transform.tracks_from_json(my_tracks_data)
+    tracks_transform.tracks_dict()
     data_df = tracks_transform.tracks_dict_to_df()
 
     validate = ValidateData(data_df)
+
     a = validate.df_empty()
     b = validate.is_null_vals()
-    if a is False or b is False:
-        db = os.getenv('DB_NAME')
-        create_engine = CreateEngine()
-        engine = create_engine.engine_connection()
-        with DatabaseConnection(db) as db_conn:
-            query = '''CREATE TABLE IF NOT EXISTS Songs (
-        id SERIAL,
-        song_name VARCHAR(55) NOT NULL,
-        artist_name VARCHAR(55) NOT NULL,
-        time_stamp VARCHAR (55) PRIMARY KEY NOT NULL
-        )'''
-            db_conn.execute(query)
 
+    create_engine = CreateEngine()
+    engine = create_engine.engine_connection()
+    db = os.getenv("DB_NAME")
+    with DatabaseConnection(db) as db_conn:
+        query = '''DROP TABLE IF EXISTS songs;
+        CREATE TABLE IF NOT EXISTS songs (
+                id SERIAL PRIMARY KEY,
+                track_name VARCHAR(55) NOT NULL,
+                artist_name VARCHAR(55) NOT NULL,
+                time_stamp VARCHAR (55) NOT NULL
+                )'''
+        db_conn.execute(query)
+    if a is False or b is False:
         with DatabaseConnection(db) as db_conn:
-            data_df.to_sql('music', engine, index=False, if_exists='append')
+            data_df.to_sql('songs', engine, index=False, if_exists='append')
     print('execution finished')
 
 
